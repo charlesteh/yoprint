@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadCsvRequest;
 use App\Jobs\ProcessCsvImportJob;
 use App\Models\CsvImport;
+use App\Models\Product;
 use App\Transformers\CsvImportTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
 use Inertia\Response;
 use League\Fractal\Manager;
@@ -155,5 +157,32 @@ class CsvUploadController extends Controller
         $data = $this->fractal->createData($resource)->toArray();
 
         return response()->json($data);
+    }
+
+    public function resetDatabase(): JsonResponse
+    {
+        $productsCount = Product::query()->count();
+        $importsCount = CsvImport::query()->count();
+
+        Product::query()->truncate();
+        CsvImport::query()->truncate();
+
+        $csvImportsPath = storage_path('app/private/csv-imports');
+        if (File::exists($csvImportsPath)) {
+            File::deleteDirectory($csvImportsPath);
+            File::makeDirectory($csvImportsPath, 0755, true);
+        }
+
+        $chunksPath = storage_path('app/private/chunks');
+        if (File::exists($chunksPath)) {
+            File::deleteDirectory($chunksPath);
+            File::makeDirectory($chunksPath, 0755, true);
+        }
+
+        return response()->json([
+            'message' => 'Database reset successfully.',
+            'products_deleted' => $productsCount,
+            'imports_deleted' => $importsCount,
+        ], 200);
     }
 }

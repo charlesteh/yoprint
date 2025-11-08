@@ -1,3 +1,13 @@
+P.S. This project is also live in [https://yoprint.charlesteh.io](https://yoprint.charlesteh.io)!
+
+I use the following to host:
+
+- Laravel Forge
+- Laravel Horizon managed by Forge
+- Laravel Reverb managed by Forge
+- 2 Cloudflare A Records: project and WSS websocket for Reverb
+- Hosted in 2 vCPU + 4GB RAM Hetzner VPS, may take 30-40 mins for processing initial records
+
 Key details
 
 - Laravel Horizon for Jobs

@@ -26,6 +26,7 @@ export default function Index() {
     const [dragActive, setDragActive] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [resetting, setResetting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchImports = async () => {
@@ -190,6 +191,32 @@ export default function Index() {
         }
     };
 
+    const handleResetDatabase = async () => {
+        if (!confirm('Are you sure you want to reset the database? This will delete all products and CSV imports. This action cannot be undone.')) {
+            return;
+        }
+
+        setResetting(true);
+        try {
+            const response = await axios.delete('/api/reset-database');
+            alert(`Database reset successfully! Deleted ${response.data.products_deleted} products and ${response.data.imports_deleted} imports.`);
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            window.location.reload();
+        } catch (error) {
+            console.error('Reset error:', error);
+            if (axios.isAxiosError(error) && error.response) {
+                alert(error.response.data.message || 'Failed to reset database');
+            } else {
+                alert('Failed to reset database');
+            }
+        } finally {
+            setResetting(false);
+        }
+    };
+
     const getStatusBadge = (status: string, percentage?: number) => {
         const styles: Record<string, string> = {
             pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
@@ -207,6 +234,7 @@ export default function Index() {
         <div className="mx-auto min-h-screen bg-gray-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-gray-900">
             <div className="mx-auto max-w-7xl space-y-3">
                 <div
+                    id="upload-container"
                     className={`rounded-lg border-2 border-dashed p-8 transition-colors ${
                         dragActive
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
@@ -217,32 +245,29 @@ export default function Index() {
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                 >
-                    <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".csv"
-                                onChange={handleChange}
-                                disabled={uploading}
-                                className="hidden"
-                                id="file-upload"
-                            />
-                            <label htmlFor="file-upload" className="inline-block cursor-pointer">
-                                <div className="text-gray-700 dark:text-gray-300">
-                                    <span className="text-lg font-medium">{selectedFile ? selectedFile.name : 'Select file / Drag and drop'}</span>
-                                    {selectedFile && (
-                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
-                                    )}
-                                </div>
-                            </label>
-                        </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv"
+                        onChange={handleChange}
+                        disabled={uploading}
+                        className="hidden"
+                        id="file-upload"
+                    />
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer rounded-lg p-3 text-gray-700 transition-colors hover:bg-gray-100 md:flex-1 dark:text-gray-300 dark:hover:bg-gray-600/50"
+                        >
+                            <span className="text-lg font-medium">{selectedFile ? selectedFile.name : 'Select file / Drag and drop'}</span>
+                            {selectedFile && (
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            )}
+                        </label>
                         <button
                             onClick={handleUpload}
                             disabled={!selectedFile || uploading}
-                            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                            className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 md:w-auto md:shrink-0"
                             title={!selectedFile ? 'Please select a file first' : uploading ? 'Upload in progress' : 'Click to upload'}
                         >
                             {uploading
@@ -269,7 +294,7 @@ export default function Index() {
                     )}
                 </div>
 
-                <div className="overflow-x-auto rounded-lg border border-gray-400">
+                <div id="history-container" className="overflow-x-auto rounded-lg border border-gray-400">
                     <table className="w-full">
                         <thead className="bg-gray-50 dark:bg-gray-700">
                             <tr>
@@ -315,9 +340,22 @@ export default function Index() {
                     </table>
                 </div>
 
-                <a className="underline" target="_blank" href="/horizon">
-                    Go to Horizon Dashboard
-                </a>
+                <div className="grid flex-wrap items-center gap-2 text-center md:flex">
+                    <a
+                        className="rounded-lg border-2 border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                        target="_blank"
+                        href="/horizon"
+                    >
+                        Go to Horizon Dashboard
+                    </a>
+                    <button
+                        onClick={handleResetDatabase}
+                        disabled={resetting || uploading}
+                        className="rounded-lg border-2 border-red-600 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-400 disabled:text-gray-400 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                        {resetting ? 'Resetting...' : 'Reset Database'}
+                    </button>
+                </div>
             </div>
         </div>
     );
