@@ -356,6 +356,22 @@ export default function Index() {
                         {resetting ? 'Resetting...' : 'Reset Database'}
                     </button>
                 </div>
+                <div className="dark:bg-text-gray-500 flex justify-start gap-1 text-gray-400">
+                    <div>
+                        By{' '}
+                        <a className="underline" href="https://charlesteh.com" target="_blank">
+                            charlesteh.com
+                        </a>
+                    </div>
+                    |{' '}
+                    <a className="underline" href="https://github.com/charlesteh/yoprint" target="_blank">
+                        Github URL{' '}
+                    </a>
+                    |{' '}
+                    <a className="underline" href="https://charlesteh.com/charlesteh-resume-2025-yoprint.pdf" target="_blank">
+                        My PDF Resume
+                    </a>
+                </div>
             </div>
         </div>
     );
